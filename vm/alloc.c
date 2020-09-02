@@ -148,6 +148,13 @@ void neko_gc_init() {
 #endif
 }
 
+EXTERN value* get_neko_builtins() {
+	return neko_builtins;
+}
+EXTERN objtable* get_neko_fields() {
+	return neko_fields;
+}
+
 EXTERN void neko_gc_loop() {
 	GC_collect_a_little();
 }
