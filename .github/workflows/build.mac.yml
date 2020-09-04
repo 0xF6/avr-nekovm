@@ -1,0 +1,41 @@
+name: publish release
+
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - run: |
+          set -ex
+          brew update
+          brew bundle --file="extra/azure-pipelines/Brewfile-STATIC_DEPS_NONE"
+    - run: cmake . -DSTATIC_DEPS=none -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    - run: ls -lrt -d -1 $PWD/
+    - run: ctest --verbose
+      working-directory: $PWD
+      continue-on-error: true
+    - run: ninja package
+      continue-on-error: true
+    - run: set -ex
+          [ "`./bin/neko -version`" == "2.3.0" ]
+    - run: zip neko-2.3.0-macos.zip . -r -9
+      working-directory: ./bin
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        artifacts: "./**/*.zip"
+        allowUpdates: true 
+        commit: master 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref }}
+        name: nekovm build
+        draft: true
+        prerelease: true
