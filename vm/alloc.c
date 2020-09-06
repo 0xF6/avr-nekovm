@@ -196,6 +196,16 @@ EXTERN value alloc_string( const char *str ) {
 	return copy_string(str,strlen(str));
 }
 
+EXTERN value alloc_neko_exception(value msg, const char* file, const char* func, int line) {
+	neko_exception* v = (neko_exception*)gc_alloc(sizeof(neko_exception));
+	v->t = VAL_EXCEPTION;
+	v->msg = msg;
+	v->file = alloc_string(file);
+	v->funcsig = alloc_string(func);
+	v->line = alloc_int(line);
+	return (value)v;
+}
+
 EXTERN value alloc_float( tfloat f ) {
 	vfloat *v = (vfloat*)gc_alloc_private(sizeof(vfloat));
 	v->t = VAL_FLOAT;

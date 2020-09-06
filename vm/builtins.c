@@ -113,8 +113,7 @@ static value builtin_asub( value a, value p, value l ) {
 	val_check(l,int);
 	pp = val_int(p);
 	ll = val_int(l);
-	if( pp < 0 || ll < 0 || pp+ll < 0 || pp+ll > val_array_size(a) )
-		neko_error();
+	try_if(pp < 0 || ll < 0 || pp+ll < 0 || pp+ll > val_array_size(a));
 	a2 = alloc_array(ll);
 	for(i=0;i<ll;i++)
 		val_array_ptr(a2)[i] = val_array_ptr(a)[pp+i];
@@ -138,8 +137,7 @@ static value builtin_ablit( value dst, value dp, value src, value sp, value l ) 
 	dpp = val_int(dp);
 	spp = val_int(sp);
 	ll = val_int(l);
-	if( dpp < 0 || spp < 0 || ll < 0 || dpp + ll < 0 || spp + ll  < 0 || dpp + ll > val_array_size(dst) || spp + ll > val_array_size(src) )
-		neko_error();
+	try_if(dpp < 0 || spp < 0 || ll < 0 || dpp + ll < 0 || spp + ll  < 0 || dpp + ll > val_array_size(dst) || spp + ll > val_array_size(src));
 	memmove(val_array_ptr(dst)+dpp,val_array_ptr(src)+spp,ll * sizeof(value));
 	return val_null;
 }
@@ -229,8 +227,7 @@ static value builtin_ssub( value s, value p, value l ) {
 	val_check(l,int);
 	pp = val_int(p);
 	ll = val_int(l);
-	if( pp < 0 || ll < 0 || pp + ll < 0 || pp + ll > val_strlen(s) )
-		neko_error();
+	try_if(pp < 0 || ll < 0 || pp + ll < 0 || pp + ll > val_strlen(s));
 	return copy_string( val_string(s) + pp , ll );
 }
 
@@ -306,8 +303,7 @@ static value builtin_sset16( value s, value p, value val, value endian ) {
 	val_check(p,int);
 	val_check(val,any_int);
 	pp = val_int(p);
-	if( pp < 0 || pp+2 > val_strlen(s) )
-		neko_error();
+	try_if(pp < 0 || pp+2 > val_strlen(s));
 	v = val_any_int(val);
 	if( TO_BE(endian) )
 		v = ((v&0xFF) << 8) | (v>>8);
@@ -342,8 +338,7 @@ static value builtin_sset32( value s, value p, value val, value endian ) {
 	val_check(p,int);
 	val_check(val,int);
 	pp = val_int(p);
-	if( pp < 0 || pp+4 > val_strlen(s) )
-		neko_error();
+	try_if(pp < 0 || pp+4 > val_strlen(s));
 	v = val_int(val);
 	if( TO_BE(endian) )
 		LTB32(v);
@@ -384,8 +379,7 @@ static value builtin_ssetf( value s, value p, value val, value endian ) {
 	val_check(p,int);
 	val_check(val,float);
 	pp = val_int(p);
-	if( pp < 0 || pp+4 > val_strlen(s) )
-		neko_error();
+	try_if(pp < 0 || pp+4 > val_strlen(s));
 	f = (float)val_float(val);
 	if( TO_BE(endian) ) {
 		unsigned int bits = *(unsigned int *)&f;
@@ -439,8 +433,7 @@ static value builtin_ssetd( value s, value p, value val, value endian ) {
 	val_check(p,int);
 	val_check(val,float);
 	pp = val_int(p);
-	if( pp < 0 || pp+8 > val_strlen(s) )
-		neko_error();
+	try_if(pp < 0 || pp+8 > val_strlen(s));
 	f = (double)val_float(val);
 	if( TO_BE(endian) ) {
 		unsigned char *p = (unsigned char*)(val_string(s) + pp);
@@ -527,7 +520,7 @@ static value builtin_dtoi( value v, value out, value endian ) {
 	} s;
 	val_check(v,float);
 	val_check(out,array);
-	if( val_array_size(out) < 2 ) neko_error();
+	try_if( val_array_size(out) < 2 );
 	s.d = val_float(v);
 	if( TO_BE(endian) ) {
 		unsigned int bits;
@@ -573,8 +566,7 @@ static value builtin_sblit( value dst, value dp, value src, value sp, value l ) 
 	dpp = val_int(dp);
 	spp = val_int(sp);
 	ll = val_int(l);
-	if( dpp < 0 || spp < 0 || ll < 0 || dpp + ll < 0 || spp + ll  < 0 || dpp + ll > val_strlen(dst) || spp + ll > val_strlen(src) )
-		neko_error();
+	try_if( dpp < 0 || spp < 0 || ll < 0 || dpp + ll < 0 || spp + ll  < 0 || dpp + ll > val_strlen(dst) || spp + ll > val_strlen(src) );
 	memmove(val_string(dst)+dpp,val_string(src)+spp,ll);
 	return val_null;
 }
@@ -595,8 +587,7 @@ static value builtin_sfind( value src, value pos, value pat ) {
 	p = val_int(pos);
 	l = val_strlen(src);
 	l2 = val_strlen(pat);
-	if( p < 0 || p >= l )
-		neko_error();
+	try_if( p < 0 || p >= l );
 	ptr = val_string(src) + p;
 	while( l - p >= l2 ) {
 		if( memcmp(ptr,val_string(pat),l2) == 0 )
@@ -614,8 +605,7 @@ static value builtin_sfind( value src, value pos, value pat ) {
 	<doc>Return a copy of the object or a new object if [null]</doc>
 **/
 static value builtin_new( value o ) {
-	if( !val_is_null(o) && !val_is_object(o) )
-		neko_error();
+	try_if(!val_is_null(o) && !val_is_object(o));
 	return alloc_object(o);
 }
 
@@ -821,8 +811,7 @@ static value builtin_closure( value *args, int nargs ) {
 	if( nargs <= 1 )
 		failure("Invalid closure arguments number");
 	f = args[0];
-	if( !val_is_function(f) )
-		neko_error();
+	try_if( !val_is_function(f) );
 	fargs = val_fun_nargs(f);
 	if( fargs != VAR_ARGS && fargs < nargs-2 )
 		failure("Invalid closure arguments number");
@@ -846,18 +835,15 @@ static value builtin_apply( value *args, int nargs ) {
 	int i;
 	nargs--;
 	args++;
-	if( nargs < 0 )
-		neko_error();
+	try_if( nargs < 0 );
 	f = args[-1];
-	if( !val_is_function(f) )
-		neko_error();
+	try_if( !val_is_function(f) );
 	if( nargs == 0 )
 		return f;
 	fargs = val_fun_nargs(f);
 	if( fargs == nargs || fargs == VAR_ARGS )
 		return val_callN(f,args,nargs);
-	if( nargs > fargs )
-		neko_error();
+	try_if( nargs > fargs );
 	env = alloc_array(fargs + 1);
 	val_array_ptr(env)[0] = f;
 	for(i=0;i<nargs;i++)
@@ -922,8 +908,7 @@ static value builtin_imult( value a, value b ) {
 	<doc>Divide two integers. An error occurs if division by 0</doc>
 **/
 static value builtin_idiv( value a, value b ) {
-	if( val_any_int(b) == 0 )
-		neko_error();
+	try_if( val_any_int(b) == 0 );
 	return alloc_best_int( val_any_int(a) / val_any_int(b) );
 }
 
@@ -1286,8 +1271,7 @@ static value builtin_hadd( value vh, value key, value val ) {
 	val_check_kind(vh,k_hash);
 	h = val_hdata(vh);
 	hkey = val_hash(key);
-	if( hkey < 0 )
-		neko_error();
+	try_if( hkey < 0 );
 	if( h->nitems >= (h->ncells << 1) )
 		builtin_hresize(vh,alloc_int(h->ncells << 1));
 	c = (hcell*)alloc(sizeof(hcell));

@@ -342,8 +342,7 @@ static value loader_loadprim( value prim, value nargs ) {
 	val_check(nargs,int);
 	libs = val_field(o,id_loader_libs);
 	val_check_kind(libs,k_loader_libs);
-	if( val_int(nargs) >= 10 || val_int(nargs) < -1 )
-		neko_error();
+	try_if( val_int(nargs) >= 10 || val_int(nargs) < -1 );
 	{
 		neko_vm *vm = NEKO_VM();
 		void *ptr = load_primitive(val_string(prim),val_int(nargs),val_field(o,id_path),(liblist**)(void*)&val_data(libs));
