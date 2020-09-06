@@ -1,0 +1,85 @@
+name: publish release
+
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  build_linux:
+    env:
+      APT_PACKAGES: cmake ninja-build pkg-config libgtk2.0-dev libgc-dev libpcre3-dev zlib1g-dev apache2-dev libmysqlclient-dev libsqlite3-dev
+      STATIC_DEPS: none
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - run: |
+          set -ex
+          sudo apt-get update -qqy
+          sudo apt-get install -qqy $(APT_PACKAGES)
+    - run: |
+          set -ex
+          mkdir ~/mbedtls
+          pushd ~/mbedtls
+          wget https://tls.mbed.org/download/mbedtls-2.2.1-apache.tgz
+          tar xzf mbedtls-2.2.1-apache.tgz
+          cd mbedtls-2.2.1 && sed -i "s/\/\/#define MBEDTLS_THREADING_PTHREAD/#define MBEDTLS_THREADING_PTHREAD/; s/\/\/#define MBEDTLS_THREADING_C/#define MBEDTLS_THREADING_C/; s/#define MBEDTLS_SSL_PROTO_SSL3/\/\/#define MBEDTLS_SSL_PROTO_SSL3/" include/mbedtls/config.h
+          SHARED=1 make lib
+          sudo make install
+          popd
+    - run: cmake . -DSTATIC_DEPS=$(STATIC_DEPS) -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    - run: |
+          set -ex
+          unset MACHINE RELEASE SYSTEM VERSION # https://marc.info/?l=gentoo-commits&m=155026142713994
+          ninja
+    - run: ctest --verbose
+      continue-on-error: true
+    - run: ninja package
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        artifacts: "./**/*.zip"
+        allowUpdates: true 
+        commit: master 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref }}
+        name: nekovm build
+        draft: true
+        prerelease: true
+  build_mac:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - run: |
+          set -ex
+          brew update
+          brew bundle --file="extra/azure-pipelines/Brewfile-STATIC_DEPS_NONE"
+    - run: cmake . -DSTATIC_DEPS=none -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    - run: ls -lrt -d -1 $PWD/
+    - run: ctest --verbose
+      working-directory: $PWD
+      continue-on-error: true
+    - run: ninja package
+      continue-on-error: true
+    - run: set -ex
+          [ "`./bin/neko -version`" == "2.3.0" ]
+    - run: zip neko-2.3.0-macos.zip . -r -9
+      working-directory: ./bin
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        artifacts: "./**/*.zip"
+        allowUpdates: true 
+        commit: master 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref }}
+        name: nekovm build
+        draft: true
+        prerelease: true
