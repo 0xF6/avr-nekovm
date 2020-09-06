@@ -155,6 +155,13 @@ EXTERN objtable* get_neko_fields() {
 	return neko_fields;
 }
 
+EXTERN value get_value_false() {
+	return (value)&t_false;
+}
+EXTERN value get_value_true() {
+	return (value)&t_true;
+}
+
 EXTERN void neko_gc_loop() {
 	GC_collect_a_little();
 }

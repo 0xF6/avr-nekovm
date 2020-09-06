@@ -421,6 +421,9 @@ C_FUNCTION_BEGIN
 	VEXTERN value val_true;
 	VEXTERN value val_false;
 
+	EXTERN value get_value_false();
+	EXTERN value get_value_true();
+
 	EXTERN value alloc_float( tfloat t );
 	EXTERN value alloc_int32( int i );
 
