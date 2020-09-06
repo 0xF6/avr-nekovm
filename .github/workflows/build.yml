@@ -28,6 +28,7 @@ jobs:
           SHARED=1 make lib
           sudo make install
           popd
+    - run: source ~/.bashrc
     - run: cmake . -DSTATIC_DEPS=$(STATIC_DEPS) -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
     - run: |
           set -ex
