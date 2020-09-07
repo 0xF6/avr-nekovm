@@ -64,10 +64,6 @@ jobs:
       continue-on-error: true
     - run: ninja package
       continue-on-error: true
-    - run: set -ex
-          [ "`./bin/neko -version`" == "2.3.0" ]
-    - run: zip neko-2.3.0-macos.zip . -r -9
-      working-directory: ./bin
     - name: Create Release
       uses: ncipollo/release-action@v1
       env:
