@@ -81,3 +81,39 @@ jobs:
         name: nekovm build
         draft: true
         prerelease: true
+  build_win:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+        toolset: 14.0
+    - run: |
+        Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        Write-Host "##vso[task.prependpath]C:\ProgramData\chocolatey\bin"
+    - run: |
+        choco install activeperl --version 5.24.3.2404001 -y
+        Write-Host "##vso[task.prependpath]C:\Perl64\bin"
+    - run: cmake . -G "Visual Studio 14 2015" -A x64
+    - run: |
+          cmake --build . --config RelWithDebInfo --target download_static_deps || \
+          cmake --build . --config RelWithDebInfo --target download_static_deps || \
+          cmake --build . --config RelWithDebInfo --target download_static_deps
+    - run: cmake --build . --config RelWithDebInfo
+    - run: cmake --build . --config RelWithDebInfo --target PACKAGE
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        artifacts: "./**/*.zip"
+        allowUpdates: true 
+        commit: master 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref }}
+        name: nekovm build
+        draft: true
+        prerelease: true
