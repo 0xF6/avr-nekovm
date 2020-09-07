@@ -99,7 +99,6 @@ configure_file (
 set(external_deps
 	BoehmGC
 	Zlib
-	OpenSSL
 	PCRE
 	Sqlite3
 	APR
