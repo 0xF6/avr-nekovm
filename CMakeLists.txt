@@ -100,7 +100,6 @@ set(external_deps
 	BoehmGC
 	Zlib
 	OpenSSL
-	MariaDBConnector
 	PCRE
 	Sqlite3
 	APR
