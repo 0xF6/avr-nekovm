@@ -33,3 +33,14 @@ bin
 /extra/chocolatey/LICENSE
 /extra/chocolatey/*.zip
 /extra/chocolatey/*.nupkg
+osdef.h
+
+cmake/flatten.cmake
+
+neko.h
+
+NekoConfig.cmake
+
+NekoConfigVersion.cmake
+
+NekoTargets.cmake

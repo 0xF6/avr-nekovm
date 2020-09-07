@@ -83,6 +83,8 @@
 #endif
 
 #if defined(NEKO_GCC)
+#	undef __FUNCSIG__
+#	define __FUNCSIG__ __PRETTY_FUNCTION__
 #	define NEKO_THREADED
 #	define NEKO_DIRECT_THREADED
 #endif
