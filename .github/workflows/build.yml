@@ -8,7 +8,7 @@ jobs:
   build_linux:
     env:
       APT_PACKAGES: cmake ninja-build pkg-config libgtk2.0-dev libgc-dev libpcre3-dev zlib1g-dev apache2-dev libmysqlclient-dev libsqlite3-dev
-      STATIC_DEPS: none
+      STATIC_DEPS: all
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v2
@@ -29,7 +29,7 @@ jobs:
           sudo make install
           popd
     - run: source ~/.bashrc
-    - run: cmake . -DSTATIC_DEPS=$(STATIC_DEPS) -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    - run: cmake . -DSTATIC_DEPS=all -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
     - run: |
           set -ex
           unset MACHINE RELEASE SYSTEM VERSION # https://marc.info/?l=gentoo-commits&m=155026142713994
