@@ -19,41 +19,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "Arduino.h"
 #include "neko_vm.h"
 #include "neko_elf.h"
-#ifdef NEKO_WINDOWS
-#	include <windows.h>
-#else
-#	include <unistd.h>
-#	include <limits.h>
-#endif
-#ifdef NEKO_MAC
-#	include <sys/param.h>
-#	include <mach-o/dyld.h>
-#endif
-#ifdef NEKO_BSD
-#	include <sys/param.h>
-#	include <sys/sysctl.h>
-#endif
-#ifdef NEKO_POSIX
-#	include <signal.h>
-#endif
-
-#ifdef __GNUC__
-#ifdef ABI_ELF
-#	define SEPARATE_SECTION_FOR_BYTECODE
-#endif
-#endif
-
-#ifdef SEPARATE_SECTION_FOR_BYTECODE
-// Make a special section header that can be repurposed to encapsulate
-// any attached bytecode so that it will not be stripped away by
-// accident...
-const unsigned int BYTECODE_SEC __attribute__((__section__(".nekobytecode"))) = 0x00;
-#endif
 
 #ifdef NEKO_STANDALONE
 	extern void neko_standalone_init();
@@ -70,59 +38,15 @@ extern value neko_stats_build( neko_vm *vm );
 
 
 static char *executable_path() {
-#if defined(NEKO_WINDOWS)
-	static char path[MAX_PATH];
-	if( GetModuleFileName(NULL,path,MAX_PATH) == 0 )
-		return NULL;
-	return path;
-#elif defined(NEKO_MAC)
-	static char path[MAXPATHLEN+1];
-	uint32_t path_len = MAXPATHLEN;
-	if ( _NSGetExecutablePath(path, &path_len) )
-		return NULL;
-	return path;
-#elif defined(NEKO_BSD)
-        int mib[4];
-        mib[0] = CTL_KERN;
-        mib[1] = KERN_PROC;
-        mib[2] = KERN_PROC_PATHNAME;
-        mib[3] = -1;
-	static char path[MAXPATHLEN];
-        size_t cb = sizeof(path);
-        sysctl(mib, 4, path, &cb, NULL, 0);
-        if (!cb) return NULL;
-        return path;
-#elif defined(NEKO_LINUX)
-	static char path[PATH_MAX];
-	int length = readlink("/proc/self/exe", path, sizeof(path));
-	if( length < 0 || length >= PATH_MAX ) {
-		char *p = getenv("   "); // for upx
-		if( p == NULL )
-			p = getenv("_");
-		return p;
-	}
-	path[length] = '\0';
-	return path;
-#else
-	return getenv("_");
-#endif
+	return NULL;
 }
 
 int neko_has_embedded_module( neko_vm *vm ) {
 	char *exe = executable_path();
-	unsigned char id[8];
-	int beg=-1, end=0;
 	if( exe == NULL )
 		return 0;
-
-#ifdef SEPARATE_SECTION_FOR_BYTECODE
-	/* Look for a .nekobytecode section in the executable..., there is always a small section */
-	if ( val_true != elf_find_embedded_bytecode(exe,&beg,&end) || end-beg <= 8) {
-		/* Couldn't find a big enough .nekobytecode section,
-		   fallback to looking at the end of the executable... */
-		beg = -1; end = 0;
-	}
-#endif
+	unsigned char id[8];
+	int beg=-1, end=0;
 	/* Back up eight bytes to the possible bytecode signature... */
 	end -= 8;
 
