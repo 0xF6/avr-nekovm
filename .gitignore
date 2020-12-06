@@ -44,3 +44,5 @@ NekoConfig.cmake
 NekoConfigVersion.cmake
 
 NekoTargets.cmake
+
+.pio/build/
