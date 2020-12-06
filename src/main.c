@@ -21,7 +21,6 @@
  */
 #include "Arduino.h"
 #include "neko_vm.h"
-#include "neko_elf.h"
 
 #ifdef NEKO_STANDALONE
 	extern void neko_standalone_init();
@@ -31,42 +30,17 @@
 #else
 #	define default_loader neko_default_loader
 #endif
-static FILE *self;
+static void** self;
 
 extern void neko_stats_measure( neko_vm *vm, const char *kind, int start );
 extern value neko_stats_build( neko_vm *vm );
 
 
-static char *executable_path() {
+static char* executable_path() {
 	return NULL;
 }
 
 int neko_has_embedded_module( neko_vm *vm ) {
-	char *exe = executable_path();
-	if( exe == NULL )
-		return 0;
-	unsigned char id[8];
-	int beg=-1, end=0;
-	/* Back up eight bytes to the possible bytecode signature... */
-	end -= 8;
-
-	self = fopen(exe,"rb");
-	if( self == NULL )
-		return 0;
-
-	fseek(self,end,(end<0)?SEEK_END:SEEK_SET);
-	if( fread(id,1,8,self) != 8 || id[0] != 'N' || id[1] != 'E' || id[2] != 'K' || id[3] != 'O' ) {
-		fclose(self);
-		return 0;
-	}
-
-        if ( -1 == beg ) {
-		beg = id[4] | id[5] << 8 | id[6] << 16;
-	}
-	fseek(self,beg,(beg<0)?SEEK_END:SEEK_SET);
-	// flags
-	if( (id[7] & 1) == 0 )
-		neko_vm_jit(vm,1);
 	return 1;
 }
 
@@ -156,13 +130,6 @@ static int execute_file( neko_vm *vm, char *file, value mload ) {
 	}
 	return 0;
 }
-
-#ifdef NEKO_VCC
-#	include <crtdbg.h>
-#else
-#	define _CrtSetDbgFlag(x)
-#endif
-
 #ifdef NEKO_POSIX
 static void handle_signal( int signal ) {
 	if( signal == SIGPIPE )
@@ -176,89 +143,11 @@ int main( int argc, char *argv[] ) {
 	neko_vm *vm;
 	value mload;
 	int r;
-	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 	neko_global_init();
 	vm = neko_vm_alloc(NULL);
 	neko_vm_select(vm);
-#	ifdef NEKO_STANDALONE
-	neko_standalone_init();
-#	endif
-#	ifdef NEKO_POSIX
-	struct sigaction act;
-	act.sa_sigaction = NULL;
-	act.sa_handler = handle_signal;
-	act.sa_flags = 0;
-	sigemptyset(&act.sa_mask);
-	sigaction(SIGPIPE,&act,NULL);
-#	endif
-	if( !neko_has_embedded_module(vm) ) {
-		int jit = 1;
-		int stats = 0;
-		while( argc > 1 ) {
-			if( strcmp(argv[1],"-interp") == 0 ) {
-				argc--;
-				argv++;
-				jit = 0;
-				continue;
-			}
-			if( strcmp(argv[1],"-stats") == 0 ) {
-				argc--;
-				argv++;
-				stats = 1;
-				neko_vm_set_stats(vm,neko_stats_measure,neko_stats_measure);
-				neko_stats_measure(vm,"total",1);
-				continue;
-			}
-			if( strcmp(argv[1],"-version") == 0 ) {
-				argc--;
-				argv++;
-				printf("%d.%d.%d\n",NEKO_VERSION_MAJOR,NEKO_VERSION_MINOR,NEKO_VERSION_PATCH);
-				return 0;
-			}
-			break;
-		}
-#		ifdef NEKO_POSIX
-		if( jit )
-			sigaction(SIGSEGV,&act,NULL);
-#		endif
-		neko_vm_jit(vm,jit);
-		if( argc == 1 ) {
-#			ifdef NEKO_STANDALONE
-			report(vm,alloc_string("No embedded module in this executable"),0);
-#			else
-			printf("NekoVM %d.%d.%d (c)2005-2017 Haxe Foundation\n  Usage : neko <file>\n",NEKO_VERSION_MAJOR,NEKO_VERSION_MINOR,NEKO_VERSION_PATCH);
-#			endif
-			mload = NULL;
-			r = 1;
-		} else {
-			mload = default_loader(argv+2,argc-2);
-			r = execute_file(vm,argv[1],mload);
-		}
-		if( stats ) {
-			value v;
-			neko_stats_measure(vm,"total",0);
-			v = neko_stats_build(vm);
-			val_print(alloc_string("TOT\tTIME\tCOUNT\tNAME\n"));
-			while( v != val_null ) {
-				char buf[256];
-				value *s = val_array_ptr(v);
-				int errors = val_int(s[4]);
-				sprintf(buf,"%d\t%d\t%d\t%s%c",
-					val_int(s[1]),
-					val_int(s[2]),
-					val_int(s[3]),
-					val_string(s[0]),
-					errors?' ':'\n');
-				if( errors )
-					sprintf(buf+strlen(buf),"ERRORS=%d\n",errors);
-				val_print(alloc_string(buf));
-				v = s[5];
-			}
-		}
-	} else {
-		mload = default_loader(argv+1,argc-1);
-		r = neko_execute_self(vm,mload);
-	}
+	mload = default_loader(argv+1,argc-1);
+	r = neko_execute_self(vm,mload);
 	if( mload != NULL && val_field(mload,val_id("dump_prof")) != val_null )
 		val_ocall0(mload,val_id("dump_prof"));
 	vm = NULL;

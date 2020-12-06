@@ -25,8 +25,8 @@
 #include "neko_vm.h"
 
 #define INIT_STACK_SIZE (1 << 8)
-#define MAX_STACK_SIZE	(1 << 18)
-#define MAX_STACK_PER_FUNCTION	128
+#define MAX_STACK_SIZE	(1 << 10)
+#define MAX_STACK_PER_FUNCTION	32
 #define PROF_SIZE		(1 << 20)
 #define CALL_MAX_ARGS	5
 #define NEKO_FIELDS_MASK 63

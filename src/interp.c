@@ -27,9 +27,6 @@
 #include "neko_mod.h"
 #include "objtable.h"
 
-#ifndef NEKO_WINDOWS
-#	include <sys/resource.h>
-#endif
 
 #if defined(NEKO_GCC) && defined(NEKO_X86) && (__GNUC__ == 3)
 #	define ACC_BACKUP	int_val __acc = acc;
@@ -98,16 +95,7 @@ static void default_printer( const char *s, int len, void *out ) {
 
 EXTERN neko_vm *neko_vm_alloc( void *custom ) {
 	neko_vm *vm = (neko_vm*)alloc(sizeof(neko_vm));
-#	ifdef NEKO_WINDOWS
-	int stack_size = 0x100000; // 1MB default
-#	else
-	struct rlimit st;
-	int stack_size;
-	if( getrlimit(RLIMIT_STACK,&st) != 0 || st.rlim_cur == RLIM_INFINITY )
-		stack_size = 8192 << 10;
-	else
-		stack_size = st.rlim_cur;
-#	endif
+	int stack_size = 0x100000 / 1024; // 1MB default
 	vm->spmin = (int_val*)alloc(INIT_STACK_SIZE*sizeof(int_val));
 	vm->print = default_printer;
 	vm->print_param = stdout;

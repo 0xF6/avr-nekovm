@@ -32,21 +32,10 @@
 #	include <signal.h>
 #endif
 
-#ifdef NEKO_WINDOWS
-#ifdef NEKO_STANDALONE
-#	define GC_NOT_DLL
-#else
-#	define GC_DLL
-#endif
-#	define GC_WIN32_THREADS
-#endif
+#define GC_NOT_DLL
 
 #define GC_THREADS
-#include "gc/gc.h"
-
-#ifndef GC_MALLOC
-#	error Looks like libgc was not installed, please install it before compiling
-#else
+#include "../gc/gc.h"
 
 // activate to get debug informations about the GC
 // #define GC_LOG
